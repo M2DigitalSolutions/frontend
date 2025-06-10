@@ -458,16 +458,13 @@
         <h2 class="section-title">Contattaci</h2>
         <p>Pronto a migliorare la qualità del tuo software? Contattaci per una consulenza personalizzata.</p>
         
-        <form class="contact-form" action="https://formspree.io/f/xdkoqpyw" method="POST">
+        <form class="contact-form" id="contactForm">
             <div class="form-group">
                 <input type="text" name="nome" placeholder="Nome" required>
                 <input type="email" name="email" placeholder="Email" required>
             </div>
             <input type="text" name="azienda" placeholder="Azienda">
             <textarea name="messaggio" placeholder="Descrivi il tuo progetto o le tue esigenze" required></textarea>
-            <input type="hidden" name="_next" value="#contatti">
-            <input type="hidden" name="_subject" value="Nuova richiesta dal sito M2 Digital Solutions">
-            <input type="hidden" name="_cc" value="m2.digital.solutions.core@gmail.com">
             <button type="submit" class="submit-btn">Invia Richiesta</button>
         </form>
     </section>
@@ -521,23 +518,71 @@
             observer.observe(card);
         });
 
-        // Gestione form di contatto con Formspree
-        document.querySelector('.contact-form').addEventListener('submit', function(e) {
+        // Gestione form di contatto con invio email
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Previene il reload della pagina
+            
             const button = this.querySelector('.submit-btn');
             const originalText = button.textContent;
             
+            // Animazione di caricamento
             button.textContent = 'Invio in corso...';
             button.disabled = true;
             button.style.background = 'linear-gradient(45deg, #ffa500, #ff6347)';
             
-            // Il form verrà inviato automaticamente da Formspree
-            // Dopo l'invio, mostriamo il popup
-            setTimeout(() => {
+            // Raccolta dati dal form
+            const formData = new FormData(this);
+            const data = {
+                nome: formData.get('nome'),
+                email: formData.get('email'),
+                azienda: formData.get('azienda') || 'Non specificata',
+                messaggio: formData.get('messaggio')
+            };
+            
+            try {
+                // Invio tramite Formspree senza redirect
+                const response = await fetch('https://formspree.io/f/mnnavqal', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nome: data.nome,
+                        email: data.email,
+                        azienda: data.azienda,
+                        messaggio: data.messaggio,
+                        _subject: 'Nuova richiesta dal sito M2 Digital Solutions',
+                        _replyto: data.email,
+                        _cc: 'm2.digital.solutions.core@gmail.com'
+                    })
+                });
+                
+                if (response.ok) {
+                    // Successo - mostra popup
+                    showThankYouPopup();
+                } else {
+                    throw new Error('Errore nell\'invio');
+                }
+                
+            } catch (error) {
+                // In caso di errore, usa mailto come fallback
+                const subject = encodeURIComponent('Nuova richiesta dal sito M2 Digital Solutions');
+                const body = encodeURIComponent(
+                    `Nome: ${data.nome}\n` +
+                    `Email: ${data.email}\n` +
+                    `Azienda: ${data.azienda}\n\n` +
+                    `Messaggio:\n${data.messaggio}`
+                );
+                
+                window.open(`mailto:m2.digital.solutions.core@gmail.com?subject=${subject}&body=${body}`);
                 showThankYouPopup();
-                button.textContent = originalText;
-                button.disabled = false;
-                button.style.background = 'linear-gradient(45deg, #00ff88, #00d4ff)';
-            }, 2000);
+            }
+            
+            // Ripristina il pulsante
+            button.textContent = originalText;
+            button.disabled = false;
+            button.style.background = 'linear-gradient(45deg, #00ff88, #00d4ff)';
         });
 
         // Funzioni per il popup
@@ -550,7 +595,7 @@
             document.getElementById('thankYouPopup').classList.remove('show');
             document.body.style.overflow = 'auto';
             // Reset del form
-            document.querySelector('.contact-form').reset();
+            document.getElementById('contactForm').reset();
         }
 
         // Chiudi popup cliccando fuori
