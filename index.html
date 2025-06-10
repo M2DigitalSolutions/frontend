@@ -518,9 +518,9 @@
             observer.observe(card);
         });
 
-        // Gestione form di contatto con invio email
+        // Gestione form di contatto - VERSIONE CORRETTA
         document.getElementById('contactForm').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Previene il reload della pagina
+            e.preventDefault();
             
             const button = this.querySelector('.submit-btn');
             const originalText = button.textContent;
@@ -532,51 +532,83 @@
             
             // Raccolta dati dal form
             const formData = new FormData(this);
-            const data = {
-                nome: formData.get('nome'),
-                email: formData.get('email'),
-                azienda: formData.get('azienda') || 'Non specificata',
-                messaggio: formData.get('messaggio')
-            };
             
+            // METODO 1: Formspree configurato correttamente
             try {
-                // Invio tramite Formspree senza redirect
-                const response = await fetch('https://formspree.io/f/mgvyaqwg', {
+                const response = await fetch('https://formspree.io/f/xdkoqpyw', {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        nome: data.nome,
-                        email: data.email,
-                        azienda: data.azienda,
-                        messaggio: data.messaggio,
-                        _subject: 'Nuova richiesta dal sito M2 Digital Solutions',
-                        _replyto: data.email,
-                        _cc: 'm2.digital.solutions.core@gmail.com'
-                    })
+                    body: formData // Usa FormData direttamente
                 });
                 
+                const result = await response.json();
+                
                 if (response.ok) {
-                    // Successo - mostra popup
                     showThankYouPopup();
                 } else {
-                    throw new Error('Errore nell\'invio');
+                    throw new Error(result.error || 'Errore Formspree');
                 }
                 
             } catch (error) {
-                // In caso di errore, usa mailto come fallback
-                const subject = encodeURIComponent('Nuova richiesta dal sito M2 Digital Solutions');
-                const body = encodeURIComponent(
-                    `Nome: ${data.nome}\n` +
-                    `Email: ${data.email}\n` +
-                    `Azienda: ${data.azienda}\n\n` +
-                    `Messaggio:\n${data.messaggio}`
-                );
+                console.log('Formspree fallito, uso Web3Forms...');
                 
-                window.open(`mailto:m2.digital.solutions.core@gmail.com?subject=${subject}&body=${body}`);
-                showThankYouPopup();
+                // METODO 2: Web3Forms come backup
+                try {
+                    const data = {
+                        nome: formData.get('nome'),
+                        email: formData.get('email'),
+                        azienda: formData.get('azienda') || 'Non specificata',
+                        messaggio: formData.get('messaggio')
+                    };
+                    
+                    const web3response = await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            access_key: 'YOUR_WEB3FORMS_KEY', // Da sostituire
+                            from_name: data.nome,
+                            email: data.email,
+                            subject: 'Nuova richiesta M2 Digital Solutions',
+                            message: `Azienda: ${data.azienda}\n\nMessaggio:\n${data.messaggio}`,
+                            to: 'm2.digital.solutions.core@gmail.com'
+                        })
+                    });
+                    
+                    if (web3response.ok) {
+                        showThankYouPopup();
+                    } else {
+                        throw new Error('Web3Forms fallito');
+                    }
+                    
+                } catch (web3Error) {
+                    console.log('Anche Web3Forms fallito, uso mailto...');
+                    
+                    // METODO 3: Mailto (sempre funziona)
+                    const data = {
+                        nome: formData.get('nome'),
+                        email: formData.get('email'),
+                        azienda: formData.get('azienda') || 'Non specificata',
+                        messaggio: formData.get('messaggio')
+                    };
+                    
+                    const subject = encodeURIComponent('🔧 Nuova richiesta M2 Digital Solutions');
+                    const body = encodeURIComponent(
+                        `👤 CONTATTO:\n` +
+                        `Nome: ${data.nome}\n` +
+                        `Email: ${data.email}\n` +
+                        `Azienda: ${data.azienda}\n\n` +
+                        `💬 MESSAGGIO:\n${data.messaggio}\n\n` +
+                        `🌐 Fonte: Sito web M2 Digital Solutions\n` +
+                        `⏰ Data: ${new Date().toLocaleString('it-IT')}`
+                    );
+                    
+                    window.location.href = `mailto:m2.digital.solutions.core@gmail.com?subject=${subject}&body=${body}`;
+                    showThankYouPopup();
+                }
             }
             
             // Ripristina il pulsante
