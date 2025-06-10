@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M2 Digital Solutions</title>
+    <title>M2 Digital Solutions - Esperti in Software Testing</title>
     <style>
         * {
             margin: 0;
@@ -323,6 +323,82 @@
         ::placeholder {
             color: rgba(255, 255, 255, 0.6);
         }
+
+        /* Popup di ringraziamento */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .popup-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .popup-content {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            border: 2px solid #00ff88;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.7);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .popup-overlay.show .popup-content {
+            transform: scale(1);
+        }
+
+        .popup-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #00ff88;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .popup-title {
+            font-size: 2rem;
+            color: #00ff88;
+            margin-bottom: 1rem;
+        }
+
+        .popup-message {
+            color: #b0b0b0;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .popup-close {
+            background: linear-gradient(45deg, #00ff88, #00d4ff);
+            color: #0f0f23;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popup-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -382,13 +458,16 @@
         <h2 class="section-title">Contattaci</h2>
         <p>Pronto a migliorare la qualità del tuo software? Contattaci per una consulenza personalizzata.</p>
         
-        <form class="contact-form">
+        <form class="contact-form" action="https://formspree.io/f/xdkoqpyw" method="POST">
             <div class="form-group">
-                <input type="text" placeholder="Nome" required>
-                <input type="email" placeholder="Email" required>
+                <input type="text" name="nome" placeholder="Nome" required>
+                <input type="email" name="email" placeholder="Email" required>
             </div>
-            <input type="text" placeholder="Azienda">
-            <textarea placeholder="Descrivi il tuo progetto o le tue esigenze" required></textarea>
+            <input type="text" name="azienda" placeholder="Azienda">
+            <textarea name="messaggio" placeholder="Descrivi il tuo progetto o le tue esigenze" required></textarea>
+            <input type="hidden" name="_next" value="#contatti">
+            <input type="hidden" name="_subject" value="Nuova richiesta dal sito M2 Digital Solutions">
+            <input type="hidden" name="_cc" value="m2.digital.solutions.core@gmail.com">
             <button type="submit" class="submit-btn">Invia Richiesta</button>
         </form>
     </section>
@@ -396,6 +475,18 @@
     <footer>
         <p>&copy; 2025 M2 Digital Solutions. Tutti i diritti riservati.</p>
     </footer>
+
+    <!-- Popup di ringraziamento -->
+    <div id="thankYouPopup" class="popup-overlay">
+        <div class="popup-content">
+            <div class="popup-icon">✅</div>
+            <h3 class="popup-title">Grazie per averci contattato!</h3>
+            <p class="popup-message">
+                La tua richiesta è stata inviata con successo. Ti risponderemo entro 24 ore per discutere delle tue esigenze di software testing.
+            </p>
+            <button class="popup-close" onclick="closePopup()">Chiudi</button>
+        </div>
+    </div>
 
     <script>
         // Smooth scrolling per i link di navigazione
@@ -430,25 +521,50 @@
             observer.observe(card);
         });
 
-        // Gestione form di contatto
+        // Gestione form di contatto con Formspree
         document.querySelector('.contact-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Animazione di feedback
             const button = this.querySelector('.submit-btn');
             const originalText = button.textContent;
             
             button.textContent = 'Invio in corso...';
-            button.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
+            button.disabled = true;
+            button.style.background = 'linear-gradient(45deg, #ffa500, #ff6347)';
             
+            // Il form verrà inviato automaticamente da Formspree
+            // Dopo l'invio, mostriamo il popup
             setTimeout(() => {
-                button.textContent = 'Messaggio Inviato!';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = 'linear-gradient(45deg, #00ff88, #00d4ff)';
-                    this.reset();
-                }, 2000);
-            }, 1500);
+                showThankYouPopup();
+                button.textContent = originalText;
+                button.disabled = false;
+                button.style.background = 'linear-gradient(45deg, #00ff88, #00d4ff)';
+            }, 2000);
+        });
+
+        // Funzioni per il popup
+        function showThankYouPopup() {
+            document.getElementById('thankYouPopup').classList.add('show');
+            document.body.style.overflow = 'hidden'; // Previene lo scroll
+        }
+
+        function closePopup() {
+            document.getElementById('thankYouPopup').classList.remove('show');
+            document.body.style.overflow = 'auto';
+            // Reset del form
+            document.querySelector('.contact-form').reset();
+        }
+
+        // Chiudi popup cliccando fuori
+        document.getElementById('thankYouPopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePopup();
+            }
+        });
+
+        // Chiudi popup con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePopup();
+            }
         });
 
         // Effetto parallax leggero per l'hero
